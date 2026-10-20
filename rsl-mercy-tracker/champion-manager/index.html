@@ -551,6 +551,18 @@
       </div>
     </div>
 
+    <!-- AyumiLove Auto-Feed Card -->
+    <div id="ayumiCard" class="card" style="display: none; border-color: rgba(212, 175, 55, 0.45); background: linear-gradient(180deg, #1b202c 0%, #12151d 100%);">
+      <div class="card-header">
+        <span class="card-title">⚡ AyumiLove Auto-Feed</span>
+        <span id="ayumiBadge" class="tag-badge" style="background: rgba(212,175,55,0.2); color: var(--gold-bright);">Checking feed...</span>
+      </div>
+      <p id="ayumiMsg" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px;"></p>
+      <button id="stageAyumiBtn" class="btn btn-gold" style="padding: 11px; display: none;">
+        Stage All New Champions
+      </button>
+    </div>
+
     <!-- Staged Changes Tray (Review Gate) -->
     <div id="stagedTray" class="staged-tray">
       <div class="card-header">
@@ -741,12 +753,88 @@
         updateUiStats();
         renderRosterList();
         setStatus('online', `Synced (v${currentGistData.version})`);
+        checkAyumiFeed();
       } catch (err) {
         console.error('Failed to fetch Gist:', err);
         setStatus('warning', 'Sync Failed');
         showToast('⚠️ Could not fetch Gist: ' + err.message, true);
       }
     }
+
+    // --- AyumiLove Auto-Feed Integration (Task 3) ---
+    let ayumiCandidates = [];
+    const ayumiCard = document.getElementById('ayumiCard');
+    const ayumiBadge = document.getElementById('ayumiBadge');
+    const ayumiMsg = document.getElementById('ayumiMsg');
+    const stageAyumiBtn = document.getElementById('stageAyumiBtn');
+
+    async function checkAyumiFeed() {
+      try {
+        const res = await fetch(`latest_champions.json?_=${Date.now()}`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const existingMyth = new Set((currentGistData.mythicalChampions || []).map(s => s.toLowerCase().trim()));
+        const existingVoid = new Set((currentGistData.voidLegendaries || []).map(s => s.toLowerCase().trim()));
+        const existingNonVoid = new Set((currentGistData.nonVoidLegendaries || []).map(s => s.toLowerCase().trim()));
+
+        ayumiCandidates = [];
+        let newM = 0, newV = 0, newNV = 0;
+
+        (data.mythicalChampions || []).forEach(name => {
+          if (!existingMyth.has(name.toLowerCase().trim())) {
+            ayumiCandidates.push({ name, rarity: 'mythical' });
+            newM++;
+          }
+        });
+
+        (data.voidLegendaries || []).forEach(name => {
+          if (!existingVoid.has(name.toLowerCase().trim())) {
+            ayumiCandidates.push({ name, rarity: 'void' });
+            newV++;
+          }
+        });
+
+        (data.nonVoidLegendaries || []).forEach(name => {
+          if (!existingNonVoid.has(name.toLowerCase().trim())) {
+            ayumiCandidates.push({ name, rarity: 'nonvoid' });
+            newNV++;
+          }
+        });
+
+        ayumiCard.style.display = 'block';
+
+        if (ayumiCandidates.length > 0) {
+          ayumiBadge.textContent = `+${ayumiCandidates.length} New`;
+          ayumiBadge.style.color = 'var(--gold-bright)';
+          ayumiMsg.innerHTML = `Found <strong>${ayumiCandidates.length}</strong> new champions on AyumiLove:<br><span style="color:#ff7675;">+${newM} Mythic</span> • <span style="color:#d18fe8;">+${newV} Void</span> • <span style="color:#f7b731;">+${newNV} Non-Void</span>`;
+          stageAyumiBtn.style.display = 'flex';
+          stageAyumiBtn.textContent = `Stage All ${ayumiCandidates.length} Champions`;
+        } else {
+          ayumiBadge.textContent = `In Sync`;
+          ayumiBadge.style.color = 'var(--success)';
+          ayumiMsg.textContent = `Your Gist is 100% up to date with the latest AyumiLove roster (${data.counts?.total || 430} total).`;
+          stageAyumiBtn.style.display = 'none';
+        }
+      } catch (err) {
+        console.log('AyumiLove feed check:', err);
+      }
+    }
+
+    stageAyumiBtn.addEventListener('click', () => {
+      const alreadyStaged = new Set(stagedChampions.map(c => c.name.toLowerCase().trim()));
+      const toAdd = ayumiCandidates.filter(c => !alreadyStaged.has(c.name.toLowerCase().trim()));
+      
+      if (toAdd.length === 0) {
+        showToast('All candidates are already in the staged tray');
+        return;
+      }
+
+      stagedChampions.push(...toAdd);
+      renderStagedList();
+      showToast(`⚡ Staged ${toAdd.length} champions! Review below.`);
+      stagedTray.scrollIntoView({ behavior: 'smooth' });
+    });
 
     let hasUnpublishedDeletions = false;
     let currentFilterCategory = 'all';
@@ -815,6 +903,7 @@
         updateUiStats();
         renderRosterList();
         setStatus('online', `Synced (v${nextVersion})`);
+        checkAyumiFeed();
         showToast(`🎉 Published to Gist: Version ${nextVersion}!`);
       } catch (err) {
         console.error('Failed to update Gist:', err);
