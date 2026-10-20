@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RSL Champion Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0d11;
+      --card-bg: #14171f;
+      --card-bg-gradient: linear-gradient(180deg, #181d27 0%, #11141b 100%);
+      --card-border: rgba(212, 175, 55, 0.25);
+      --card-border-active: rgba(212, 175, 55, 0.7);
+      --gold-primary: #d4af37;
+      --gold-bright: #ffd700;
+      --gold-dim: #9a7d2c;
+      --text-main: #f0ede6;
+      --text-muted: #8b92a2;
+      --mythical: #e74c3c;
+      --void: #9b59b6;
+      --nonvoid: #f39c12;
+      --danger: #c0392b;
+      --success: #27ae60;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 14px;
+      padding-bottom: 80px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Header Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--card-bg-gradient);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-title h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--gold-bright);
+      text-transform: uppercase;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #7f8c8d;
+    }
+
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .status-dot.warning {
+      background: var(--nonvoid);
+      box-shadow: 0 0 6px var(--nonvoid);
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+      color: var(--gold-bright);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.94);
+      border-color: var(--gold-bright);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg-gradient);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .stat-box {
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      text-align: center;
+      border-top: 2px solid transparent;
+    }
+
+    .stat-box.mythical { border-color: var(--mythical); }
+    .stat-box.void { border-color: var(--void); }
+    .stat-box.nonvoid { border-color: var(--nonvoid); }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Tabs */
+    .tabs-bar {
+      display: flex;
+      background: rgba(0,0,0,0.35);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--gold-bright);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Textarea & Inputs */
+    textarea, input[type="text"] {
+      width: 100%;
+      background: #0d0f14;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--gold-primary);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    /* Rarity Selector Buttons */
+    .rarity-pills {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .rarity-pill-btn {
+      padding: 10px 6px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.3);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .rarity-pill-btn.active.mythical {
+      background: rgba(231, 76, 60, 0.2);
+      border-color: var(--mythical);
+      color: #ff7675;
+    }
+
+    .rarity-pill-btn.active.void {
+      background: rgba(155, 89, 182, 0.2);
+      border-color: var(--void);
+      color: #d18fe8;
+    }
+
+    .rarity-pill-btn.active.nonvoid {
+      background: rgba(243, 156, 18, 0.2);
+      border-color: var(--nonvoid);
+      color: #f7b731;
+    }
+
+    /* Primary Action Buttons */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-gold {
+      background: linear-gradient(180deg, #e5b93b 0%, #ba9124 100%);
+      color: #0b0d11;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+
+    .btn-gold:active {
+      transform: scale(0.98);
+      filter: brightness(0.9);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-main);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* Staged Items Tray */
+    .staged-tray {
+      display: none;
+      background: #11141b;
+      border: 1px solid var(--gold-primary);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(212, 175, 55, 0.15);
+    }
+
+    .staged-tray.visible {
+      display: block;
+    }
+
+    .staged-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .staged-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rarity-select {
+      background: #0d0f14;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      padding: 4px 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--danger);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    /* Roster Browser / Search */
+    .search-input-wrapper {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .roster-list {
+      max-height: 280px;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      background: rgba(0,0,0,0.25);
+      padding: 4px;
+    }
+
+    .roster-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.85rem;
+    }
+
+    .roster-item:last-child {
+      border-bottom: none;
+    }
+
+    .tag-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .tag-badge.mythical { background: rgba(231,76,60,0.2); color: #ff7675; }
+    .tag-badge.void { background: rgba(155,89,182,0.2); color: #d18fe8; }
+    .tag-badge.nonvoid { background: rgba(243,156,18,0.2); color: #f7b731; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card-bg-gradient);
+      border: 1px solid var(--gold-primary);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--gold-bright);
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .modal-desc a {
+      color: var(--gold-primary);
+      text-decoration: underline;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e2430;
+      border: 1px solid var(--gold-primary);
+      color: var(--text-main);
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-title">
+        <span style="font-size: 1.4rem;">⚔️</span>
+        <div>
+          <h1>Champion Manager</h1>
+          <div class="status-badge">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">Checking Gist...</span>
+          </div>
+        </div>
+      </div>
+      <button id="openSettingsBtn" class="icon-btn" title="Settings">⚙️</button>
+    </header>
+
+    <!-- Stats Summary Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📊 Live Gist Status</span>
+        <span id="versionBadge" class="tag-badge" style="background: rgba(212,175,55,0.2); color: var(--gold-bright);">Version ?</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box mythical">
+          <div id="countMythical" class="stat-value">0</div>
+          <div class="stat-label">Mythical</div>
+        </div>
+        <div class="stat-box void">
+          <div id="countVoid" class="stat-value">0</div>
+          <div class="stat-label">Void Lego</div>
+        </div>
+        <div class="stat-box nonvoid">
+          <div id="countNonVoid" class="stat-value">0</div>
+          <div class="stat-label">Non-Void</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staged Changes Tray (Review Gate) -->
+    <div id="stagedTray" class="staged-tray">
+      <div class="card-header">
+        <span class="card-title" style="color: var(--gold-bright);">📝 Staged For Update (<span id="stagedCount">0</span>)</span>
+        <button id="clearStagedBtn" style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer;">Clear All</button>
+      </div>
+      <div id="stagedListContainer"></div>
+      <button id="publishGistBtn" class="btn btn-gold" style="margin-top: 10px;">
+        🚀 Save & Publish to Gist
+      </button>
+    </div>
+
+    <!-- Add Section Tabs -->
+    <div class="card">
+      <div class="tabs-bar">
+        <button id="tabSmartBtn" class="tab-btn active">⚡ Smart Paste / Scan</button>
+        <button id="tabManualBtn" class="tab-btn">✍️ Manual Entry</button>
+      </div>
+
+      <!-- Tab 1: Smart Text Parser -->
+      <div id="panelSmart">
+        <textarea id="smartTextInput" placeholder="Paste Plarium Update Highlights, Discord notes, or AyumiLove text here...&#10;&#10;Example:&#10;Thor Faehammer - Barbarians - Force&#10;Galathir the Nephilim - High Elves - Void"></textarea>
+        <button id="scanBtn" class="btn btn-gold" style="margin-top: 10px;">
+          ⚡ Scan For New Champions
+        </button>
+      </div>
+
+      <!-- Tab 2: Manual Single Add -->
+      <div id="panelManual" style="display: none;">
+        <input type="text" id="manualNameInput" placeholder="Enter Champion Name (e.g., Harima)">
+        <div class="rarity-pills">
+          <button type="button" class="rarity-pill-btn mythical" data-rarity="mythical">🔴 Mythical</button>
+          <button type="button" class="rarity-pill-btn void" data-rarity="void">🟣 Void Lego</button>
+          <button type="button" class="rarity-pill-btn nonvoid active" data-rarity="nonvoid">🟠 Non-Void</button>
+        </div>
+        <button id="manualAddBtn" class="btn btn-secondary">
+          + Stage Champion
+        </button>
+      </div>
+    </div>
+
+    <!-- Existing Database Browser -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔍 Browse Database (<span id="totalRosterCount">0</span>)</span>
+      </div>
+      <div class="tabs-bar" style="margin-bottom: 8px;">
+        <button class="tab-btn active filter-tab" data-filter="all">All</button>
+        <button class="tab-btn filter-tab" data-filter="mythical">🔴 Mythical</button>
+        <button class="tab-btn filter-tab" data-filter="void">🟣 Void</button>
+        <button class="tab-btn filter-tab" data-filter="nonvoid">🟠 Non-Void</button>
+      </div>
+      <div class="search-input-wrapper">
+        <input type="text" id="searchInput" placeholder="Search champion name...">
+      </div>
+      <div id="rosterList" class="roster-list">
+        <!-- Champion list items inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (Token Entry) -->
+  <div id="settingsModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h2 class="modal-title">⚙️ Gist Settings</h2>
+      <p class="modal-desc">
+        To publish updates directly from your phone, enter a GitHub <strong>Fine-Grained Personal Access Token (PAT)</strong> with <em>Gists: Read and Write</em> permission. It is stored solely in this device's browser.
+      </p>
+      <input type="text" id="tokenInput" placeholder="github_pat_..." style="margin-bottom: 12px; font-family: monospace; font-size: 0.8rem;">
+      <div style="display: flex; gap: 8px;">
+        <button id="saveTokenBtn" class="btn btn-gold" style="flex: 2;">Save Token</button>
+        <button id="closeSettingsBtn" class="btn btn-secondary" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Notice message</div>
+
+  <script>
+    const GIST_ID = '3bb0b4ad73aa438eaef76573171ee164';
+    const GIST_FILE = 'champions.json';
+
+    let currentGistData = {
+      version: 1,
+      mythicalChampions: [],
+      voidLegendaries: [],
+      nonVoidLegendaries: []
+    };
+
+    let stagedChampions = [];
+
+    // DOM Elements
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const versionBadge = document.getElementById('versionBadge');
+    const countMythical = document.getElementById('countMythical');
+    const countVoid = document.getElementById('countVoid');
+    const countNonVoid = document.getElementById('countNonVoid');
+    const totalRosterCount = document.getElementById('totalRosterCount');
+    const rosterList = document.getElementById('rosterList');
+    const searchInput = document.getElementById('searchInput');
+
+    const stagedTray = document.getElementById('stagedTray');
+    const stagedCount = document.getElementById('stagedCount');
+    const stagedListContainer = document.getElementById('stagedListContainer');
+    const clearStagedBtn = document.getElementById('clearStagedBtn');
+    const publishGistBtn = document.getElementById('publishGistBtn');
+
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const tokenInput = document.getElementById('tokenInput');
+    const saveTokenBtn = document.getElementById('saveTokenBtn');
+    const toast = document.getElementById('toast');
+
+    const tabSmartBtn = document.getElementById('tabSmartBtn');
+    const tabManualBtn = document.getElementById('tabManualBtn');
+    const panelSmart = document.getElementById('panelSmart');
+    const panelManual = document.getElementById('panelManual');
+
+    // UI Helpers
+    function showToast(message, isError = false) {
+      toast.textContent = message;
+      toast.style.borderColor = isError ? 'var(--danger)' : 'var(--gold-primary)';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    function setStatus(type, message) {
+      statusDot.className = 'status-dot';
+      if (type === 'online') statusDot.classList.add('online');
+      else if (type === 'warning') statusDot.classList.add('warning');
+      statusText.textContent = message;
+    }
+
+    function getGitHubToken() {
+      return localStorage.getItem('rsl_gist_token') || '';
+    }
+
+    function sortAndDedupe(arr) {
+      const set = new Set(arr.map(s => (s || '').trim()).filter(Boolean));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+
+    function updateUiStats() {
+      versionBadge.textContent = `Version ${currentGistData.version || 1}`;
+      countMythical.textContent = (currentGistData.mythicalChampions || []).length;
+      countVoid.textContent = (currentGistData.voidLegendaries || []).length;
+      countNonVoid.textContent = (currentGistData.nonVoidLegendaries || []).length;
+
+      const total = (currentGistData.mythicalChampions || []).length +
+                    (currentGistData.voidLegendaries || []).length +
+                    (currentGistData.nonVoidLegendaries || []).length;
+      totalRosterCount.textContent = total;
+    }
+
+    // --- GitHub Gist API Integration (Task 3) ---
+
+    async function fetchGistData() {
+      setStatus('warning', 'Connecting...');
+      try {
+        const token = getGitHubToken();
+        const headers = { 'Accept': 'application/vnd.github+json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}?_=${Date.now()}`, { headers });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        const fileObj = data.files[GIST_FILE];
+        if (!fileObj || !fileObj.content) {
+          throw new Error(`Missing ${GIST_FILE} in Gist`);
+        }
+
+        const parsed = JSON.parse(fileObj.content);
+        currentGistData = {
+          version: parsed.version || 1,
+          mythicalChampions: Array.isArray(parsed.mythicalChampions) ? parsed.mythicalChampions : [],
+          voidLegendaries: Array.isArray(parsed.voidLegendaries) ? parsed.voidLegendaries : [],
+          nonVoidLegendaries: Array.isArray(parsed.nonVoidLegendaries) ? parsed.nonVoidLegendaries : []
+        };
+
+        updateUiStats();
+        renderRosterList();
+        setStatus('online', `Synced (v${currentGistData.version})`);
+      } catch (err) {
+        console.error('Failed to fetch Gist:', err);
+        setStatus('warning', 'Sync Failed');
+        showToast('⚠️ Could not fetch Gist: ' + err.message, true);
+      }
+    }
+
+    let hasUnpublishedDeletions = false;
+    let currentFilterCategory = 'all';
+
+    async function publishGistUpdate() {
+      const token = getGitHubToken();
+      if (!token) {
+        showToast('🔑 Please configure GitHub PAT first', true);
+        settingsModal.classList.add('open');
+        return;
+      }
+
+      if (stagedChampions.length === 0 && !hasUnpublishedDeletions) {
+        showToast('No changes to publish', true);
+        return;
+      }
+
+      publishGistBtn.disabled = true;
+      publishGistBtn.textContent = '⏳ Publishing to Gist...';
+
+      try {
+        const newMythicals = [...currentGistData.mythicalChampions];
+        const newVoids = [...currentGistData.voidLegendaries];
+        const newNonVoids = [...currentGistData.nonVoidLegendaries];
+
+        for (const item of stagedChampions) {
+          if (item.rarity === 'mythical') newMythicals.push(item.name);
+          else if (item.rarity === 'void') newVoids.push(item.name);
+          else newNonVoids.push(item.name);
+        }
+
+        const nextVersion = (currentGistData.version || 1) + 1;
+        const updatedPayload = {
+          version: nextVersion,
+          mythicalChampions: sortAndDedupe(newMythicals),
+          voidLegendaries: sortAndDedupe(newVoids),
+          nonVoidLegendaries: sortAndDedupe(newNonVoids)
+        };
+
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: `RSL Champion Roster Update v${nextVersion}`,
+            files: {
+              [GIST_FILE]: {
+                content: JSON.stringify(updatedPayload, null, 2)
+              }
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || `HTTP ${res.status}`);
+        }
+
+        currentGistData = updatedPayload;
+        stagedChampions = [];
+        hasUnpublishedDeletions = false;
+        renderStagedList();
+        updateUiStats();
+        renderRosterList();
+        setStatus('online', `Synced (v${nextVersion})`);
+        showToast(`🎉 Published to Gist: Version ${nextVersion}!`);
+      } catch (err) {
+        console.error('Failed to update Gist:', err);
+        showToast('❌ Failed to update Gist: ' + err.message, true);
+      } finally {
+        publishGistBtn.disabled = false;
+        publishGistBtn.textContent = '🚀 Save & Publish to Gist';
+      }
+    }
+
+    // --- Temporary Staged Tray rendering for testing ---
+    function renderStagedList() {
+      stagedCount.textContent = stagedChampions.length;
+      if (stagedChampions.length === 0 && !hasUnpublishedDeletions) {
+        stagedTray.classList.remove('visible');
+        stagedListContainer.innerHTML = '';
+        return;
+      }
+
+      stagedTray.classList.add('visible');
+      stagedListContainer.innerHTML = stagedChampions.map((item, idx) => `
+        <div class="staged-item">
+          <span class="staged-name">${item.name}</span>
+          <select class="rarity-select" onchange="updateStagedRarity(${idx}, this.value)">
+            <option value="mythical" ${item.rarity === 'mythical' ? 'selected' : ''}>Mythical</option>
+            <option value="void" ${item.rarity === 'void' ? 'selected' : ''}>Void Lego</option>
+            <option value="nonvoid" ${item.rarity === 'nonvoid' ? 'selected' : ''}>Non-Void</option>
+          </select>
+          <button class="remove-btn" onclick="removeStagedItem(${idx})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    window.updateStagedRarity = function(idx, newRarity) {
+      if (stagedChampions[idx]) {
+        stagedChampions[idx].rarity = newRarity;
+      }
+    };
+
+    window.removeStagedItem = function(idx) {
+      stagedChampions.splice(idx, 1);
+      renderStagedList();
+    };
+
+    // Delete existing champion from active database
+    window.deleteExistingChampion = function(name, rarity) {
+      const displayRarity = rarity === 'nonvoid' ? 'Non-Void' : rarity;
+      if (!confirm(`Are you sure you want to remove "${name}" from ${displayRarity}?\n\nTap 'Save & Publish' after to update the Gist.`)) {
+        return;
+      }
+
+      if (rarity === 'mythical') {
+        currentGistData.mythicalChampions = currentGistData.mythicalChampions.filter(n => n !== name);
+      } else if (rarity === 'void') {
+        currentGistData.voidLegendaries = currentGistData.voidLegendaries.filter(n => n !== name);
+      } else {
+        currentGistData.nonVoidLegendaries = currentGistData.nonVoidLegendaries.filter(n => n !== name);
+      }
+
+      hasUnpublishedDeletions = true;
+      updateUiStats();
+      renderRosterList();
+      renderStagedList();
+      publishGistBtn.textContent = '🚀 Save & Publish Changes to Gist';
+      showToast(`Removed "${name}". Tap 'Save & Publish' to update Gist.`);
+    };
+
+    function renderRosterList(filterQuery = searchInput.value) {
+      const q = (filterQuery || '').toLowerCase();
+      let all = [];
+
+      (currentGistData.mythicalChampions || []).forEach(name => all.push({ name, rarity: 'mythical' }));
+      (currentGistData.voidLegendaries || []).forEach(name => all.push({ name, rarity: 'void' }));
+      (currentGistData.nonVoidLegendaries || []).forEach(name => all.push({ name, rarity: 'nonvoid' }));
+
+      all.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+      if (currentFilterCategory !== 'all') {
+        all = all.filter(c => c.rarity === currentFilterCategory);
+      }
+
+      const filtered = q ? all.filter(c => c.name.toLowerCase().includes(q)) : all;
+
+      if (filtered.length === 0) {
+        rosterList.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted); font-size:0.8rem;">No champions found</div>`;
+        return;
+      }
+
+      rosterList.innerHTML = filtered.map(c => `
+        <div class="roster-item">
+          <span>${c.name}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="tag-badge ${c.rarity}">${c.rarity === 'nonvoid' ? 'Non-Void' : c.rarity}</span>
+            <button class="remove-btn" onclick="deleteExistingChampion('${c.name.replace(/'/g, "\\'")}', '${c.rarity}')" title="Delete champion">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- Smart Text Parser & Manual Entry (Task 4) ---
+    const smartTextInput = document.getElementById('smartTextInput');
+    const scanBtn = document.getElementById('scanBtn');
+    const manualNameInput = document.getElementById('manualNameInput');
+    const manualAddBtn = document.getElementById('manualAddBtn');
+    const rarityPillBtns = document.querySelectorAll('.rarity-pill-btn');
+
+    let currentManualRarity = 'nonvoid';
+
+    // Rarity selector pill buttons
+    rarityPillBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        rarityPillBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentManualRarity = btn.dataset.rarity;
+      });
+    });
+
+    // Manual single champion add
+    function addManualChampion() {
+      const name = manualNameInput.value.trim();
+      if (!name) {
+        showToast('⚠️ Please enter a champion name', true);
+        return;
+      }
+
+      const allExisting = new Set([
+        ...(currentGistData.mythicalChampions || []),
+        ...(currentGistData.voidLegendaries || []),
+        ...(currentGistData.nonVoidLegendaries || [])
+      ].map(n => n.toLowerCase().trim()));
+
+      if (allExisting.has(name.toLowerCase())) {
+        showToast(`⚠️ "${name}" is already in the database!`, true);
+        return;
+      }
+
+      if (stagedChampions.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        showToast(`⚠️ "${name}" is already staged!`, true);
+        return;
+      }
+
+      stagedChampions.push({
+        name: name,
+        rarity: currentManualRarity
+      });
+
+      manualNameInput.value = '';
+      renderStagedList();
+      showToast(`Added "${name}" (${currentManualRarity === 'nonvoid' ? 'Non-Void' : currentManualRarity})`);
+    }
+
+    manualAddBtn.addEventListener('click', addManualChampion);
+    manualNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addManualChampion();
+      }
+    });
+
+    // Smart Text Parser
+    const JUNK_HEADERS = new Set([
+      'new champions', 'update highlights', 'champion', 'champions', 'rarity', 
+      'legendary', 'mythical', 'void', 'force', 'magic', 'spirit', 'patch notes',
+      'faction', 'skills', 'skill', 'overview', 'highlights', 'note', 'notes'
+    ]);
+
+    function parseTextIntoChampions(rawText) {
+      if (!rawText || !rawText.trim()) return [];
+
+      const allExisting = new Set([
+        ...(currentGistData.mythicalChampions || []),
+        ...(currentGistData.voidLegendaries || []),
+        ...(currentGistData.nonVoidLegendaries || []),
+        ...stagedChampions.map(c => c.name)
+      ].map(n => n.toLowerCase().trim()));
+
+      const lines = rawText.split('\n');
+      const candidates = [];
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line || line.length < 3) continue;
+
+        // Clean leading bullet marks / numbers
+        line = line.replace(/^[\s\-*•\d\.\)\]\[\>#]+/, '').trim();
+        if (!line) continue;
+
+        let detectedName = '';
+        let detectedRarity = 'nonvoid';
+
+        // Format 1: AyumiLove pattern -> Name (XX-YYZ) e.g. Acrizia (DW-LAV) or Alaz (BL-MAV)
+        const ayumiMatch = line.match(/^([A-Za-z0-9'\s\-]+?)\s*\(([A-Za-z]{2,3}-[A-Za-z0-9]{3,4})\)/);
+        if (ayumiMatch) {
+          detectedName = ayumiMatch[1].trim();
+          const code = ayumiMatch[2].toUpperCase();
+          if (code.includes('-M')) {
+            detectedRarity = 'mythical';
+          } else if (code.endsWith('V')) {
+            detectedRarity = 'void';
+          } else {
+            detectedRarity = 'nonvoid';
+          }
+        } else {
+          // Format 2: Delimited lines e.g. "Thor Faehammer - Barbarians - Force" or "Thor Faehammer (Void)"
+          const lower = line.toLowerCase();
+          if (/mythic/i.test(line)) {
+            detectedRarity = 'mythical';
+          } else if (/void/i.test(line)) {
+            detectedRarity = 'void';
+          } else {
+            detectedRarity = 'nonvoid';
+          }
+
+          // Extract name (take the portion before common delimiters)
+          const parts = line.split(/[-–—:|(\[]/);
+          detectedName = parts[0].trim();
+        }
+
+        // Clean out quotes, commas, trailing artifacts
+        detectedName = detectedName.replace(/["'“”]/g, '').trim();
+
+        // Validation checks
+        if (!detectedName || detectedName.length < 2 || detectedName.length > 40) continue;
+        if (JUNK_HEADERS.has(detectedName.toLowerCase())) continue;
+        if (allExisting.has(detectedName.toLowerCase())) continue;
+
+        candidates.push({
+          name: detectedName,
+          rarity: detectedRarity
+        });
+        allExisting.add(detectedName.toLowerCase());
+      }
+
+      return candidates;
+    }
+
+    scanBtn.addEventListener('click', () => {
+      const text = smartTextInput.value;
+      if (!text || !text.trim()) {
+        showToast('⚠️ Paste some text in the box first', true);
+        return;
+      }
+
+      const results = parseTextIntoChampions(text);
+      if (results.length === 0) {
+        showToast('No new champions found (already in database or empty)');
+        return;
+      }
+
+      stagedChampions.push(...results);
+      renderStagedList();
+      showToast(`⚡ Found ${results.length} new champion${results.length > 1 ? 's' : ''}!`);
+    });
+
+    // Event Listeners
+    openSettingsBtn.addEventListener('click', () => {
+      tokenInput.value = getGitHubToken();
+      settingsModal.classList.add('open');
+    });
+
+    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('open'));
+
+    saveTokenBtn.addEventListener('click', () => {
+      const val = tokenInput.value.trim();
+      if (val) {
+        localStorage.setItem('rsl_gist_token', val);
+        showToast('🔑 GitHub PAT saved locally!');
+      } else {
+        localStorage.removeItem('rsl_gist_token');
+        showToast('Token cleared');
+      }
+      settingsModal.classList.remove('open');
+      fetchGistData();
+    });
+
+    publishGistBtn.addEventListener('click', publishGistUpdate);
+
+    clearStagedBtn.addEventListener('click', () => {
+      stagedChampions = [];
+      renderStagedList();
+      showToast('Staged items cleared');
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      renderRosterList(e.target.value);
+    });
+
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        filterTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilterCategory = tab.dataset.filter;
+        renderRosterList(searchInput.value);
+      });
+    });
+
+    tabSmartBtn.addEventListener('click', () => {
+      tabSmartBtn.classList.add('active');
+      tabManualBtn.classList.remove('active');
+      panelSmart.style.display = 'block';
+      panelManual.style.display = 'none';
+    });
+
+    tabManualBtn.addEventListener('click', () => {
+      tabManualBtn.classList.add('active');
+      tabSmartBtn.classList.remove('active');
+      panelManual.style.display = 'block';
+      panelSmart.style.display = 'none';
+    });
+
+    // Initial Fetch on Load
+    fetchGistData();
+  </script>
+</body>
+</html>
