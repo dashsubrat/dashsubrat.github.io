@@ -708,6 +708,10 @@
       return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     }
 
+    function normalizeName(name) {
+      return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
     function updateUiStats() {
       versionBadge.textContent = `Version ${currentGistData.version || 1}`;
       countMythical.textContent = (currentGistData.mythicalChampions || []).length;
@@ -774,46 +778,59 @@
         if (!res.ok) return;
 
         const data = await res.json();
-        const existingMyth = new Set((currentGistData.mythicalChampions || []).map(s => s.toLowerCase().trim()));
-        const existingVoid = new Set((currentGistData.voidLegendaries || []).map(s => s.toLowerCase().trim()));
-        const existingNonVoid = new Set((currentGistData.nonVoidLegendaries || []).map(s => s.toLowerCase().trim()));
+        
+        // Build normalized lookup of existing champions in Gist
+        const gistMap = new Map();
+        (currentGistData.mythicalChampions || []).forEach(name => gistMap.set(normalizeName(name), { name, rarity: 'mythical' }));
+        (currentGistData.voidLegendaries || []).forEach(name => gistMap.set(normalizeName(name), { name, rarity: 'void' }));
+        (currentGistData.nonVoidLegendaries || []).forEach(name => gistMap.set(normalizeName(name), { name, rarity: 'nonvoid' }));
 
         ayumiCandidates = [];
-        let newM = 0, newV = 0, newNV = 0;
+        let newCount = 0;
+        let moveCount = 0;
 
-        (data.mythicalChampions || []).forEach(name => {
-          if (!existingMyth.has(name.toLowerCase().trim())) {
-            ayumiCandidates.push({ name, rarity: 'mythical' });
-            newM++;
-          }
-        });
+        function processCategory(list, targetRarity) {
+          (list || []).forEach(name => {
+            const norm = normalizeName(name);
+            if (!gistMap.has(norm)) {
+              ayumiCandidates.push({
+                name: name,
+                rarity: targetRarity,
+                isMove: false
+              });
+              newCount++;
+            } else {
+              const existing = gistMap.get(norm);
+              if (existing.rarity !== targetRarity) {
+                // Affinity move: preserve existing Gist spelling
+                ayumiCandidates.push({
+                  name: existing.name,
+                  rarity: targetRarity,
+                  isMove: true,
+                  oldRarity: existing.rarity
+                });
+                moveCount++;
+              }
+            }
+          });
+        }
 
-        (data.voidLegendaries || []).forEach(name => {
-          if (!existingVoid.has(name.toLowerCase().trim())) {
-            ayumiCandidates.push({ name, rarity: 'void' });
-            newV++;
-          }
-        });
-
-        (data.nonVoidLegendaries || []).forEach(name => {
-          if (!existingNonVoid.has(name.toLowerCase().trim())) {
-            ayumiCandidates.push({ name, rarity: 'nonvoid' });
-            newNV++;
-          }
-        });
+        processCategory(data.mythicalChampions, 'mythical');
+        processCategory(data.voidLegendaries, 'void');
+        processCategory(data.nonVoidLegendaries, 'nonvoid');
 
         ayumiCard.style.display = 'block';
 
         if (ayumiCandidates.length > 0) {
-          ayumiBadge.textContent = `+${ayumiCandidates.length} New`;
+          ayumiBadge.textContent = `${newCount} New • ${moveCount} Moves`;
           ayumiBadge.style.color = 'var(--gold-bright)';
-          ayumiMsg.innerHTML = `Found <strong>${ayumiCandidates.length}</strong> new champions on AyumiLove:<br><span style="color:#ff7675;">+${newM} Mythic</span> • <span style="color:#d18fe8;">+${newV} Void</span> • <span style="color:#f7b731;">+${newNV} Non-Void</span>`;
+          ayumiMsg.innerHTML = `Found <strong>${newCount}</strong> brand-new champion${newCount !== 1 ? 's' : ''} and <strong>${moveCount}</strong> affinity correction${moveCount !== 1 ? 's' : ''} (normalized & comma-safe).`;
           stageAyumiBtn.style.display = 'flex';
-          stageAyumiBtn.textContent = `Stage All ${ayumiCandidates.length} Champions`;
+          stageAyumiBtn.textContent = `Stage All ${ayumiCandidates.length} Updates`;
         } else {
           ayumiBadge.textContent = `In Sync`;
           ayumiBadge.style.color = 'var(--success)';
-          ayumiMsg.textContent = `Your Gist is 100% up to date with the latest AyumiLove roster (${data.counts?.total || 430} total).`;
+          ayumiMsg.textContent = `Your Gist is 100% up to date with AyumiLove (${data.counts?.total || 430} champions).`;
           stageAyumiBtn.style.display = 'none';
         }
       } catch (err) {
@@ -822,17 +839,17 @@
     }
 
     stageAyumiBtn.addEventListener('click', () => {
-      const alreadyStaged = new Set(stagedChampions.map(c => c.name.toLowerCase().trim()));
-      const toAdd = ayumiCandidates.filter(c => !alreadyStaged.has(c.name.toLowerCase().trim()));
+      const alreadyStagedNorm = new Set(stagedChampions.map(c => normalizeName(c.name)));
+      const toAdd = ayumiCandidates.filter(c => !alreadyStagedNorm.has(normalizeName(c.name)));
       
       if (toAdd.length === 0) {
-        showToast('All candidates are already in the staged tray');
+        showToast('All updates are already in the staged tray');
         return;
       }
 
       stagedChampions.push(...toAdd);
       renderStagedList();
-      showToast(`⚡ Staged ${toAdd.length} champions! Review below.`);
+      showToast(`⚡ Staged ${toAdd.length} updates! Review below.`);
       stagedTray.scrollIntoView({ behavior: 'smooth' });
     });
 
@@ -856,9 +873,14 @@
       publishGistBtn.textContent = '⏳ Publishing to Gist...';
 
       try {
-        const newMythicals = [...currentGistData.mythicalChampions];
-        const newVoids = [...currentGistData.voidLegendaries];
-        const newNonVoids = [...currentGistData.nonVoidLegendaries];
+        // Map staged items by normalized name to safely handle moves & updates
+        const stagedNormMap = new Map();
+        stagedChampions.forEach(item => stagedNormMap.set(normalizeName(item.name), item));
+
+        // Filter existing lists to exclude any item being moved/reclassified
+        const newMythicals = (currentGistData.mythicalChampions || []).filter(n => !stagedNormMap.has(normalizeName(n)));
+        const newVoids = (currentGistData.voidLegendaries || []).filter(n => !stagedNormMap.has(normalizeName(n)));
+        const newNonVoids = (currentGistData.nonVoidLegendaries || []).filter(n => !stagedNormMap.has(normalizeName(n)));
 
         for (const item of stagedChampions) {
           if (item.rarity === 'mythical') newMythicals.push(item.name);
@@ -914,7 +936,7 @@
       }
     }
 
-    // --- Temporary Staged Tray rendering for testing ---
+    // --- Staged Tray rendering ---
     function renderStagedList() {
       stagedCount.textContent = stagedChampions.length;
       if (stagedChampions.length === 0 && !hasUnpublishedDeletions) {
@@ -926,7 +948,10 @@
       stagedTray.classList.add('visible');
       stagedListContainer.innerHTML = stagedChampions.map((item, idx) => `
         <div class="staged-item">
-          <span class="staged-name">${item.name}</span>
+          <div style="flex: 1; overflow: hidden; margin-right: 8px;">
+            <span class="staged-name">${item.name}</span>
+            ${item.isMove ? `<span style="font-size: 0.7rem; color: var(--gold-bright); display: block; font-weight: 600;">(Move: ${item.oldRarity === 'nonvoid' ? 'Non-Void' : item.oldRarity} ➔ ${item.rarity === 'nonvoid' ? 'Non-Void' : item.rarity})</span>` : ''}
+          </div>
           <select class="rarity-select" onchange="updateStagedRarity(${idx}, this.value)">
             <option value="mythical" ${item.rarity === 'mythical' ? 'selected' : ''}>Mythical</option>
             <option value="void" ${item.rarity === 'void' ? 'selected' : ''}>Void Lego</option>
@@ -1033,14 +1058,14 @@
         ...(currentGistData.mythicalChampions || []),
         ...(currentGistData.voidLegendaries || []),
         ...(currentGistData.nonVoidLegendaries || [])
-      ].map(n => n.toLowerCase().trim()));
+      ].map(normalizeName));
 
-      if (allExisting.has(name.toLowerCase())) {
+      if (allExisting.has(normalizeName(name))) {
         showToast(`⚠️ "${name}" is already in the database!`, true);
         return;
       }
 
-      if (stagedChampions.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      if (stagedChampions.some(c => normalizeName(c.name) === normalizeName(name))) {
         showToast(`⚠️ "${name}" is already staged!`, true);
         return;
       }
@@ -1078,7 +1103,7 @@
         ...(currentGistData.voidLegendaries || []),
         ...(currentGistData.nonVoidLegendaries || []),
         ...stagedChampions.map(c => c.name)
-      ].map(n => n.toLowerCase().trim()));
+      ].map(normalizeName));
 
       const lines = rawText.split('\n');
       const candidates = [];
@@ -1128,13 +1153,13 @@
         // Validation checks
         if (!detectedName || detectedName.length < 2 || detectedName.length > 40) continue;
         if (JUNK_HEADERS.has(detectedName.toLowerCase())) continue;
-        if (allExisting.has(detectedName.toLowerCase())) continue;
+        if (allExisting.has(normalizeName(detectedName))) continue;
 
         candidates.push({
           name: detectedName,
           rarity: detectedRarity
         });
-        allExisting.add(detectedName.toLowerCase());
+        allExisting.add(normalizeName(detectedName));
       }
 
       return candidates;
