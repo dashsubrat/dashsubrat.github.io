@@ -557,8 +557,9 @@
         <span class="card-title">⚡ AyumiLove Auto-Feed</span>
         <span id="ayumiBadge" class="tag-badge" style="background: rgba(212,175,55,0.2); color: var(--gold-bright);">Checking feed...</span>
       </div>
-      <p id="ayumiMsg" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px;"></p>
-      <button id="stageAyumiBtn" class="btn btn-gold" style="padding: 11px; display: none;">
+      <p id="ayumiMsg" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0;"></p>
+      <div id="autopilotActivitySection" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);"></div>
+      <button id="stageAyumiBtn" class="btn btn-gold" style="padding: 11px; display: none; margin-top: 10px;">
         Stage All New Champions
       </button>
     </div>
@@ -772,6 +773,20 @@
     const ayumiMsg = document.getElementById('ayumiMsg');
     const stageAyumiBtn = document.getElementById('stageAyumiBtn');
 
+    function formatSyncDate(isoStr) {
+      if (!isoStr) return 'Recently';
+      try {
+        const d = new Date(isoStr);
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        if (isToday) return `Today at ${timeStr} UTC`;
+        return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${timeStr} UTC`;
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
     async function checkAyumiFeed() {
       try {
         const res = await fetch(`latest_champions.json?_=${Date.now()}`);
@@ -820,6 +835,7 @@
         processCategory(data.nonVoidLegendaries, 'nonvoid');
 
         ayumiCard.style.display = 'block';
+        const activitySec = document.getElementById('autopilotActivitySection');
 
         if (ayumiCandidates.length > 0) {
           ayumiBadge.textContent = `${newCount} New • ${moveCount} Moves`;
@@ -827,11 +843,35 @@
           ayumiMsg.innerHTML = `Found <strong>${newCount}</strong> brand-new champion${newCount !== 1 ? 's' : ''} and <strong>${moveCount}</strong> affinity correction${moveCount !== 1 ? 's' : ''} (normalized & comma-safe).`;
           stageAyumiBtn.style.display = 'flex';
           stageAyumiBtn.textContent = `Stage All ${ayumiCandidates.length} Updates`;
+          if (activitySec) activitySec.style.display = 'none';
         } else {
           ayumiBadge.textContent = `In Sync`;
           ayumiBadge.style.color = 'var(--success)';
           ayumiMsg.textContent = `Your Gist is 100% up to date with AyumiLove (${data.counts?.total || 430} champions).`;
           stageAyumiBtn.style.display = 'none';
+
+          if (activitySec && data.lastAutopilotRun) {
+            activitySec.style.display = 'block';
+            const dateStr = formatSyncDate(data.lastAutopilotRun);
+            if (data.recentlyAdded && data.recentlyAdded.length > 0) {
+              ayumiBadge.textContent = `🤖 Auto-Synced v${data.gistVersion || currentGistData.version || ''}`;
+              activitySec.innerHTML = `
+                <div style="font-size: 0.8rem; color: var(--gold-bright); font-weight: 600; margin-bottom: 4px;">🤖 Last Autopilot Sync: ${dateStr}</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 6px;">Added ${data.recentlyAdded.length} new champion${data.recentlyAdded.length > 1 ? 's' : ''} to Gist:</div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  ${data.recentlyAdded.map(c => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                      <span style="color: var(--text-main); font-weight: 600;">• ${c.name}</span>
+                      <span class="tag-badge ${c.rarity}">${c.rarity.toUpperCase()}</span>
+                    </div>
+                  `).join('')}
+                </div>`;
+            } else {
+              activitySec.innerHTML = `<div style="font-size: 0.78rem; color: var(--text-muted);">🤖 Last Autopilot Check: ${dateStr} (0 new found)</div>`;
+            }
+          } else if (activitySec) {
+            activitySec.style.display = 'none';
+          }
         }
       } catch (err) {
         console.log('AyumiLove feed check:', err);

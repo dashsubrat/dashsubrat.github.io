@@ -1,12 +1,15 @@
 {
-  "lastScraped": "2026-10-20T07:39:46.334967+00:00",
+  "lastScraped": "2026-10-21T05:12:08.338381+00:00",
+  "lastAutopilotRun": "2026-10-21T05:12:08.338381+00:00",
   "source": "https://ayumilove.net/raid-shadow-legends-list-of-champions-by-affinity/",
+  "gistVersion": 3,
   "counts": {
     "mythical": 34,
     "void": 97,
     "nonVoid": 299,
     "total": 430
   },
+  "recentlyAdded": [],
   "mythicalChampions": [
     "Alaz the Sunbearer",
     "Anaxia the Reborn",
