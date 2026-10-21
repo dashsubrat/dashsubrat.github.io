@@ -19,7 +19,9 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Run Scraper
+      - name: Run Scraper & Autonomous Gist Sync
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
         run: |
           SCRIPT_PATH=$(find . -name "scrape_ayumilove.py" -not -path "*/.*" | head -n 1)
           if [ -n "$SCRIPT_PATH" ]; then
